@@ -1,0 +1,9 @@
+checkpoint_path: ckpt/best_model.pth
+csv_dir_path: dataset/csv_files
+imgs_path: dataset/imgs
+log_path: logs/training.log
+batch_size: 10
+learning_rate: 0.001
+num_epochs: 10
+train_split: 0.7
+val_split: 0.15

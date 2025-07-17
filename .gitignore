@@ -1,0 +1,16 @@
+# Python
+*.pyc
+
+# 데이터
+*.csv
+*.jpg
+*.png
+
+# 모델 체크포인트
+*.pth
+
+# 로그
+*.log
+
+# Mac 시스템 파일
+.DS_Store
