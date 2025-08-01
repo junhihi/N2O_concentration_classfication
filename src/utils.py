@@ -34,26 +34,32 @@ def to_jpg(data, file, output_dir='dataset/imgs', augmentation=True):
     folder = os.path.join(output_dir, file)
     os.makedirs(folder, exist_ok=True)
 
-    n, start = 0, 0
+    n, cnt = 0, 0
     samples = list()
     while True:
         try:
-            sample = os.path.join(folder, f'sample_{n}.jpg')
-            start = extract(data, n, n+1)['기준신호 1'].idxmin()
-            end = start + 10000
-            if end > len(data):
-                break
-            cycle = data[start:end].reset_index(drop=True)
-            plt.figure(figsize=(10, 10), dpi=100)
-            plt.plot(cycle['기준신호 1'])
-            plt.plot(cycle['base'])
-            plt.axis('off')
-            plt.savefig(sample, bbox_inches='tight')
-            plt.close()
+            s_ref = extract(data, n, n+1)['기준신호 1'].idxmin()
+            e_ref = s_ref+10000
+            if e_ref > len(data):
+                    break
+            for i in range(100):
+                sample = os.path.join(folder, f'sample_{cnt}.jpg')
+                start = s_ref+100*i
+                end = start + 10000
+                if end > len(data):
+                    break
+                cycle = data[start:end].reset_index(drop=True)
+                plt.figure(figsize=(10, 10), dpi=100)
+                plt.plot(cycle['기준신호 1'])
+                plt.plot(cycle['base'])
+                plt.axis('off')
+                plt.savefig(sample, bbox_inches='tight')
+                plt.close()
+                samples.append(sample)
+                cnt += 1
+                if not augmentation:
+                    break
             n += 1
-            samples.append(sample)
-            if not augmentation:
-                break
         except ValueError:
             break
     return folder, samples
