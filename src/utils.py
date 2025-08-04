@@ -64,14 +64,29 @@ def to_jpg(data, file, output_dir='dataset/imgs', augmentation=True):
             break
     return folder, samples
 
-def labeling(folder_path='dataset/csv_files', output_dir='dataset/imgs'):
+def labeling(folder_path='dataset/csv_files', output_dir='dataset/imgs', gen_img=False, augmentation=True):
     """데이터셋 라벨링 및 이미지 경로 생성"""
     folders = [f.split('.')[0] for f in os.listdir(folder_path) if f.endswith('.csv')]
     datas = [pd.read_csv(os.path.join(folder_path, f'{f}.csv'), encoding='cp949') for f in folders]
 
-    with ProcessPoolExecutor() as executor:
-        new_folders = list(executor.map(to_jpg, datas, folders, repeat(output_dir)))
+    if gen_img:
+        with ProcessPoolExecutor() as executor:
+            new_folders = list(executor.map(to_jpg, datas, folders, repeat(output_dir),augmentation))
     
+    else:  
+        new_folders = [
+            (
+                os.path.join(output_dir, folder),
+                [
+                    os.path.join(output_dir, folder, file)
+                    for file in os.listdir(os.path.join(output_dir, folder))
+                    if not file.startswith('.DS_Store')
+                ]
+            )
+            for folder in os.listdir(output_dir)
+            if os.path.isdir(os.path.join(output_dir, folder)) and not folder.startswith('.DS_Store')
+        ]
+
     img = defaultdict(list)
     for f, s in new_folders:
         img[torch.tensor(float(re.search(r'_(\d+)%', f).group(1))/100, dtype=torch.float32)].extend(s)
