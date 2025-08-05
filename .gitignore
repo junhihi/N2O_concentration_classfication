@@ -16,7 +16,7 @@
 .DS_Store
 
 # zip 파일
-.zip
+*.zip
 
 # ipynb 파일
-.ipynb
+*.ipynb
