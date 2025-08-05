@@ -20,7 +20,6 @@ class CustomDataset(Dataset):
         return len(self.image_paths)
 
     def __getitem__(self, idx):
-        """인덱스에 해당하는 이미지와 라벨 반환"""
         try:
             img = Image.open(self.image_paths[idx]).convert('RGB')
             if self.transform:
@@ -28,4 +27,4 @@ class CustomDataset(Dataset):
             return img, self.labels[idx]
         except Exception as e:
             print(f"이미지 로드 오류: {self.image_paths[idx]} - {e}")
-            return torch.zeros((1, 224, 224)), 0
+            return None, None  # None 반환 후 DataLoader에서 필터링
