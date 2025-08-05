@@ -10,13 +10,14 @@ import torch
 from itertools import repeat
 
 # 디바이스
-device = "mps" if torch.backends.mps.is_available() else "cpu"
+device = "mps" if torch.backends.mps.is_available() else "cuda"
 
 # 전역 transform 정의
 TRANSFORM = transforms.Compose([
     transforms.Resize((224, 224)),
+    transforms.Grayscale(num_output_channels=1),
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    transforms.Normalize(mean=[0.5], std=[0.5])
 ])
 
 def load_config(config_path='config/config.yaml'):
@@ -36,22 +37,24 @@ def to_jpg(data, file, output_dir='dataset/imgs', augmentation=True):
 
     n, cnt = 0, 0
     samples = list()
+    sampling = 10000
+    aug = 10
     while True:
         try:
             s_ref = extract(data, n, n+1)['기준신호 1'].idxmin()
-            e_ref = s_ref+10000
+            e_ref = s_ref+sampling
             if e_ref > len(data):
                     break
-            for i in range(100):
+            for i in range(aug):
                 sample = os.path.join(folder, f'sample_{cnt}.jpg')
-                start = s_ref+100*i
-                end = start + 10000
+                start = s_ref+int(sampling/aug)*i
+                end = start + sampling
                 if end > len(data):
                     break
                 cycle = data[start:end].reset_index(drop=True)
-                plt.figure(figsize=(10, 10), dpi=100)
-                plt.plot(cycle['기준신호 1'])
-                plt.plot(cycle['base'])
+                plt.figure(figsize=(5, 5), dpi=100)
+                # plt.plot(cycle['기준신호 1'])
+                plt.plot(cycle['base'], linewidth=.3, c='black')
                 plt.axis('off')
                 plt.savefig(sample, bbox_inches='tight')
                 plt.close()
@@ -64,17 +67,22 @@ def to_jpg(data, file, output_dir='dataset/imgs', augmentation=True):
             break
     return folder, samples
 
+
 def labeling(csv_path='dataset/csv_files', output_dir='dataset/imgs', augmentation=True):
     """데이터셋 라벨링 및 이미지 경로 생성"""
-    op_dir = [f'{f}.csv' for f in os.listdir(output_dir) if not f.endswith('.DS_Store')]
-    csv_files = [c for c in os.listdir(csv_path) if c.endswith('.csv')]
+    if not os.path.exists(csv_path) and not os.path.exists(output_dir):
+        os.makedirs(csv_path, exist_ok=True)
+        os.makedirs(output_dir, exist_ok=True)
+
+    op_dir = [f for f in os.listdir(output_dir) if not f.endswith('.DS_Store')]
+    csv_files = [c.split('.')[0] for c in os.listdir(csv_path) if c.endswith('.csv')]
     
-    new_csv = [os.path.join(csv_path,c) for c in csv_files if c not in op_dir]
-    datas = [pd.read_csv(c, encoding='cp949') for c in new_csv]
+    new_csv = [c for c in csv_files if c not in op_dir]
+    datas = [pd.read_csv(os.path.join(csv_path,f'{c}.csv'), encoding='cp949') for c in new_csv]
 
     if new_csv:
         with ProcessPoolExecutor() as executor:
-            new_folders = list(executor.map(to_jpg, datas, new_csv, repeat(output_dir),repeat(augmentation)))
+            new_folders = list(executor.map(to_jpg, datas, new_csv, repeat(output_dir), repeat(augmentation)))
     
     else:  
         new_folders = [
