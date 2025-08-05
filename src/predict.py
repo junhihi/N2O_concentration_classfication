@@ -9,7 +9,7 @@ import re
 
 def prediction(model, csv, config):
     try:
-        img_dir, _ = to_jpg(pd.read_csv(csv, encoding='cp949'),'test',output_dir='..')
+        img_dir, _ = to_jpg(pd.read_csv(csv, encoding='cp949'),'test',output_dir='..',augmentation=False)
         img_path = [os.path.join(img_dir, i) for i in os.listdir(img_dir)]
 
         predicted, cycle = 0, 0
