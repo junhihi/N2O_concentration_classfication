@@ -28,4 +28,4 @@ class CustomDataset(Dataset):
             return img, self.labels[idx]
         except Exception as e:
             print(f"이미지 로드 오류: {self.image_paths[idx]} - {e}")
-            return torch.zeros((3, 224, 224)), 0
+            return torch.zeros((1, 224, 224)), 0
