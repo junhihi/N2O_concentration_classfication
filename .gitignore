@@ -14,3 +14,9 @@
 
 # Mac 시스템 파일
 .DS_Store
+
+# zip 파일
+.zip
+
+# ipynb 파일
+.ipynb
