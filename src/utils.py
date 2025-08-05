@@ -10,7 +10,13 @@ import torch
 from itertools import repeat
 
 # 디바이스
-device = "mps" if torch.backends.mps.is_available() else "cuda"
+def get_device():
+    if torch.cuda.is_available():
+        return "cuda"
+    elif torch.backends.mps.is_available():
+        return "mps"
+    else:
+        return "cpu"
 
 # 전역 transform 정의
 TRANSFORM = transforms.Compose([
@@ -52,6 +58,10 @@ def to_jpg(data, file, output_dir='dataset/imgs', augmentation=True):
                 if end > len(data):
                     break
                 cycle = data[start:end].reset_index(drop=True)
+                # min-max 정규화
+                cycle['base'] = (cycle['base'] - cycle['base'].min()) / (cycle['base'].max() - cycle['base'].min())
+                # 표준화
+                # cycle['base'] = (cycle['base'] - cycle['base'].mean()) / cycle['base'].std()
                 plt.figure(figsize=(5, 5), dpi=100)
                 # plt.plot(cycle['기준신호 1'])
                 plt.plot(cycle['base'], linewidth=.3, c='black')
@@ -70,7 +80,7 @@ def to_jpg(data, file, output_dir='dataset/imgs', augmentation=True):
 
 def labeling(csv_path='dataset/csv_files', output_dir='dataset/imgs', augmentation=True):
     """데이터셋 라벨링 및 이미지 경로 생성"""
-    if not os.path.exists(csv_path) and not os.path.exists(output_dir):
+    if not os.path.exists(csv_path) or not os.path.exists(output_dir):
         os.makedirs(csv_path, exist_ok=True)
         os.makedirs(output_dir, exist_ok=True)
 
