@@ -64,14 +64,17 @@ def to_jpg(data, file, output_dir='dataset/imgs', augmentation=True):
             break
     return folder, samples
 
-def labeling(folder_path='dataset/csv_files', output_dir='dataset/imgs', gen_img=False, augmentation=True):
+def labeling(csv_path='dataset/csv_files', output_dir='dataset/imgs', augmentation=True):
     """데이터셋 라벨링 및 이미지 경로 생성"""
-    folders = [f.split('.')[0] for f in os.listdir(folder_path) if f.endswith('.csv')]
-    datas = [pd.read_csv(os.path.join(folder_path, f'{f}.csv'), encoding='cp949') for f in folders]
+    op_dir = [f'{f}.csv' for f in os.listdir(output_dir) if not f.endswith('.DS_Store')]
+    csv_files = [c for c in os.listdir(csv_path) if c.endswith('.csv')]
+    
+    new_csv = [os.path.join(csv_path,c) for c in csv_files if c not in op_dir]
+    datas = [pd.read_csv(c, encoding='cp949') for c in new_csv]
 
-    if gen_img:
+    if new_csv:
         with ProcessPoolExecutor() as executor:
-            new_folders = list(executor.map(to_jpg, datas, folders, repeat(output_dir),augmentation))
+            new_folders = list(executor.map(to_jpg, datas, new_csv, repeat(output_dir),repeat(augmentation)))
     
     else:  
         new_folders = [
