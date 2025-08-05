@@ -4,10 +4,10 @@ import pandas as pd
 from PIL import Image
 import argparse
 from model import CNN
-from utils import TRANSFORM, load_config, to_jpg, device
+from utils import TRANSFORM, load_config, to_jpg, get_device
 import re
 
-def prediction(model, csv, config):
+def prediction(model, csv, device):
     try:
         img_dir, _ = to_jpg(pd.read_csv(csv, encoding='cp949'),'test',output_dir='..',augmentation=False)
         img_path = [os.path.join(img_dir, i) for i in os.listdir(img_dir)]
@@ -37,6 +37,7 @@ def main():
     parser.add_argument('--checkpoint_path', type=str, default=None, help="체크포인트 경로")
     args = parser.parse_args()
     
+    device = get_device()
     model = CNN().to(device)
 
     # csv 경로가 인자로 제공되면 사용, 아니면 config.yaml의 경로 사용
@@ -50,7 +51,7 @@ def main():
     for f in os.listdir(csv):
         if f.endswith('.csv'):
             csv_path = os.path.join(csv, f)
-            label = prediction(model, csv_path, config)
+            label = prediction(model, csv_path, device)
             gt = int(re.search(r'_(\d+)%', f).group(1))/100
             err = abs(label - gt) / gt
             result.append({'filename': f, 'concentration': f'{label*100:.4f}%', 'err_rate': f"{err*100:.4f}%"})
