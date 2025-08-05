@@ -4,16 +4,24 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 import logging
 import os
-from utils import TRANSFORM, load_config, labeling, device
+from utils import TRANSFORM, load_config, labeling, get_device
 from dataset import CustomDataset
 from model import CNN
 import yaml
 import numpy as np  # RMSE 계산을 위해 추가
 
+def collate_fn(batch):
+    '''배치에서 None 값을 가진 샘플을 필터링'''
+    batch = [b for b in batch if b[0] is not None]
+    if not batch:
+        return None, None
+    return torch.utils.data.dataloader.default_collate(batch)
+
 class ModelTrainer:
     """모델 학습 및 평가 클래스"""
+    # 나중에 config에서 device, augmentation 추가
     def __init__(self, model, config):
-        self.device = device
+        self.device = get_device()
         self.model = model
         self.criterion = nn.MSELoss()
         self.optimizer = optim.Adam(model.parameters(), lr=config['learning_rate'])
@@ -110,7 +118,7 @@ def main():
     config = load_config()
     logging.basicConfig(filename=config['log_path'], level=logging.INFO, 
                        format='%(asctime)s - %(levelname)s - %(message)s')
-    
+
     print("데이터 전처리 시작")
     # 데이터 전처리 및 라벨링
     imgs = labeling(config['csv_dir_path'], config['imgs_path'])
@@ -137,10 +145,11 @@ def main():
     train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
 
     # 데이터 로더 생성
-    train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=config['batch_size'], shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=config['batch_size'], shuffle=False)
-
+    train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True, collate_fn=collate_fn)
+    val_loader = DataLoader(val_dataset, batch_size=config['batch_size'], shuffle=False, collate_fn=collate_fn)
+    test_loader = DataLoader(test_dataset, batch_size=config['batch_size'], shuffle=False, collate_fn=collate_fn)
+    
+    device = get_device()
     # 모델 및 트레이너 초기화
     model = CNN().to(device)
     trainer = ModelTrainer(model, config)
