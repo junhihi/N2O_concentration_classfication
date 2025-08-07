@@ -4,7 +4,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 import logging
 import os
-from utils import TRANSFORM, load_config, labeling, device
+from utils import TRANSFORM, load_config, labeling, get_device
 from dataset import CustomDataset
 from model import CNN
 import yaml
@@ -13,7 +13,7 @@ import numpy as np  # RMSE 계산을 위해 추가
 class ModelTrainer:
     """모델 학습 및 평가 클래스"""
     def __init__(self, model, config):
-        self.device = device
+        self.device = get_device()
         self.model = model
         self.criterion = nn.MSELoss()
         self.optimizer = optim.Adam(model.parameters(), lr=config['learning_rate'])
@@ -110,7 +110,7 @@ def main():
     config = load_config()
     logging.basicConfig(filename=config['log_path'], level=logging.INFO, 
                        format='%(asctime)s - %(levelname)s - %(message)s')
-    
+
     print("데이터 전처리 시작")
     # 데이터 전처리 및 라벨링
     imgs = labeling(config['csv_dir_path'], config['imgs_path'])
@@ -140,7 +140,8 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=config['batch_size'], shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=config['batch_size'], shuffle=False)
-
+    
+    device = get_device()
     # 모델 및 트레이너 초기화
     model = CNN().to(device)
     trainer = ModelTrainer(model, config)
@@ -153,8 +154,8 @@ def main():
     print(f'최적 모델 - 테스트 손실: {test_loss:.4f}, 테스트 MAE: {test_mae:.4f}, 테스트 RMSE: {test_rmse:.4f}')
     print(f"잘못된 예측 수: {len(wrong)}")
     if wrong:
-        print("잘못된 예측 상세 (최대 10개):")
-        for path, true_label, pred_label in wrong[:10]:
+        print("잘못된 예측 상세 :")
+        for path, true_label, pred_label in wrong:
             print(f"이미지: {path}, 실제 값: {true_label:.4f}, 예측 값: {pred_label:.4f}")
 
 if __name__ == "__main__":
